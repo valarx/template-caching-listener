@@ -1,6 +1,9 @@
 #include <functional>
-#include <iostream>
 #include <utility>
+#include <type_traits>
+
+#include <iostream>
+#include <string>
 
 namespace
 {
@@ -12,7 +15,7 @@ void DestructImpl(const Function& f, const Tuple& t, std::index_sequence<Is...>)
 }
 
 template<template<typename> class F, typename T, typename ...Args, typename Indices = std::make_index_sequence<sizeof...(Args)>>
-void Destruct(F<T(Args...)> func, std::tuple<Args...> args)
+void Destruct(const F<T(Args...)>& func, const std::tuple<typename std::decay<Args>::type...>& args)
 {
   DestructImpl(func, args, Indices{});
 }
@@ -40,20 +43,20 @@ private:
     Destruct(_cb, _cache);
   }
   F<T(Args...)> _cb;
-  std::tuple<Args...> _cache;
+  std::tuple<typename std::decay<Args>::type...> _cache;
 };
 
 struct MyStruct
 {
   auto CreateListener()
   {
-    std::function<void(int, int, int)> lambda = [this](int a, int b, int c) { SomeCallback(a, b, c); };
+    std::function<void(const std::string&, int, int)> lambda = [this](const std::string& a, int b, int c) { SomeCallback(a, b, c); };
     return Listener<decltype(lambda)> { std::move(lambda) };
   }
 
-  void SomeCallback(int a, int b, int c)
+  void SomeCallback(const std::string& a, int b, int c)
   {
-    std::cout << a + b + c + d << std::endl;
+    std::cout << a << b + c + d << std::endl;
   }
   int d = 10;
 };
@@ -63,6 +66,7 @@ int main()
 {
   MyStruct s;
   auto listener = s.CreateListener();
-  listener.Notify(1, 2, 3);
+
+  listener.Notify("aaaa", 2, 3);
   return 0;
 }
