@@ -43,12 +43,26 @@ private:
   std::tuple<Args...> _cache;
 };
 
+struct MyStruct
+{
+  auto CreateListener()
+  {
+    std::function<void(int, int, int)> lambda = [this](int a, int b, int c) { SomeCallback(a, b, c); };
+    return Listener<decltype(lambda)> { std::move(lambda) };
+  }
+
+  void SomeCallback(int a, int b, int c)
+  {
+    std::cout << a + b + c + d << std::endl;
+  }
+  int d = 10;
+};
+
+
 int main()
 {
-  std::function<void(int, int)> func = [](int a, int b) { std::cout << a + b << std::endl; };
-  Listener<decltype(func)> cb(std::move(func));
-  cb.Notify(5, 6);
-  std::function<void(int, int)> func1 = [](int a, int b) { std::cout << a - b << std::endl; };
-  cb.UpdateCallback(std::move(func1));
+  MyStruct s;
+  auto listener = s.CreateListener();
+  listener.Notify(1, 2, 3);
   return 0;
 }
