@@ -8,7 +8,7 @@ namespace
 template<typename Function, typename Tuple, std::size_t ...Is>
 void DestructImpl(const Function& f, const Tuple& t, std::index_sequence<Is...>)
 {
-  f(std::get<Is>(t)...);
+  f(std::forward<decltype(std::get<Is>(t))>(std::get<Is>(t))...);
 }
 
 template<template<typename> class F, typename T, typename ...Args, typename Indices = std::make_index_sequence<sizeof...(Args)>>
@@ -31,7 +31,7 @@ public:
   }
   void Notify(Args&&... args)
   {
-    _cache = std::make_tuple(args...);
+    _cache = std::make_tuple(std::forward<Args>(args)...);
     Apply();
   }
 private:
@@ -45,8 +45,10 @@ private:
 
 int main()
 {
-  std::function<void(int)> func = [](int a) { std::cout << a << std::endl; };
+  std::function<void(int, int)> func = [](int a, int b) { std::cout << a + b << std::endl; };
   Listener<decltype(func)> cb(std::move(func));
-  cb.Notify(5);
+  cb.Notify(5, 6);
+  std::function<void(int, int)> func1 = [](int a, int b) { std::cout << a - b << std::endl; };
+  cb.UpdateCallback(std::move(func1));
   return 0;
 }
